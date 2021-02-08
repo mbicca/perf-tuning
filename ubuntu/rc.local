@@ -1,0 +1,48 @@
+#!/bin/bash
+## Prior to Ubuntu 19.04 with Linux 5.0 or Ubuntu 18.04.3 with Linux 4.15, the multiqueue I/O scheduling was not enabled by default
+# and just the deadline, cfq and noop I/O schedulers were available by default.
+
+# For Ubuntu 19.10 with Linux 5.0 or Ubuntu 18.04.3 with Linux 5.0 onwards, multiqueue is enabled by default providing the bfq,
+# kyber, mq-deadline and none I/O schedulers. For Ubuntu 19.10 with Linux 5.3 the deadline, cfq and noop I/O schedulers are deprecated.
+
+# With the Linux 5.0 kernels, one can disable these and fall back to the non-multiqueue I/O schedulers using a kernel parameter, 
+# for example for SCSI devices one can use:
+
+#scsi_mod.use_blk_mq=0
+#..add this to the GRUB_CMDLINE_LINUX_DEFAULT string in /etc/default/grub and run sudo update-grub to enable this option.
+
+# Changing an I/O scheduler is performed on a per block device basis.
+# For example, for non-multi queue device /dev/sda one can see the current I/O schedulers available using the following:
+
+# [CFQ]
+#cat /sys/block/sda/queue/scheduler
+#noop deadline [cfq]
+
+# [MQ-DEADLINE]
+#to change this to deadline use:
+#echo "deadline" | sudo tee /sys/block/sda/queue/scheduler
+#For multiqueue devices the default will show:
+#cat /sys/block/sda/queue/scheduler 
+#[mq-deadline] none
+
+# [KYBER]
+#To use kyber, install the module:
+modprobe kyber-iosched
+#cat /sys/block/sda/queue/scheduler 
+#[mq-deadline] kyber none
+#and enable it:
+#echo "kyber" | sudo tee /sys/block/sda/queue/scheduler
+
+# [BFQ]
+#To use bfq, install the module:
+#modprobe bfq
+#cat /sys/block/sda/queue/scheduler 
+#[mq-deadline] kyber none
+#and enable it:
+ifconfig enp1s0 txqueuelen 200
+ethtool -s enp1s0 speed 1000 duplex full autoneg off
+echo never > /sys/kernel/mm/transparent_hugepage/enabled
+echo "2" | tee /sys/block/*/queue/rq_affinity
+echo "256" | tee /sys/block/*/queue/nr_requests
+echo "256" | tee /sys/block/*/queue/read_ahead_kb
+echo "kyber" | tee /sys/block/*/queue/scheduler

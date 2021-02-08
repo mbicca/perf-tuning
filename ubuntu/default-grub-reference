@@ -1,0 +1,1 @@
+GRUB_CMDLINE_LINUX_DEFAULT="cgroup_disable=cpuset,cpu,cpuacct,blkio,memory,devices,freezer,net_cls,perf_event,net_prio,hugetlb,pids,rdma ipv6.disable=1 systemd.gpt_auto=0"
